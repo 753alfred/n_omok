@@ -1,41 +1,44 @@
 body {
   font-family: sans-serif;
   text-align: center;
-  background-color: #f8f8f8;
+  background: #f9f9f9;
 }
 
-canvas {
-  border: 2px solid #000;
-  margin-top: 10px;
-  background-color: #fff;
+#board {
+  border: 2px solid black;
+  margin-top: 20px;
+  background: #fff;
 }
 
-#room-list {
+#room-list-screen,
+#game-screen {
+  margin-top: 20px;
+}
+
+li {
   list-style: none;
-  padding: 0;
-}
-
-#room-list li {
-  margin: 10px;
+  margin: 10px 0;
 }
 
 button {
-  padding: 10px 20px;
-  font-size: 16px;
+  margin-left: 10px;
 }
 
-/* 팝업 스타일 */
-.popup {
+#create-popup,
+#password-popup {
+  display: none;
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   align-items: center;
+  justify-content: center;
 }
 
 .popup-content {
-  background-color: #fff;
+  background: white;
   padding: 20px;
   border-radius: 10px;
 }
