@@ -1,57 +1,48 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>n인용 오목 게임 (방 개설)</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>n인용 오목 게임</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>n인용 오목 게임</h1>
 
-  <!-- 방 리스트 화면 -->
   <div id="room-list-screen">
-    <label><input type="checkbox" id="hide-playing" onchange="renderRoomList()"> 게임중인 방 숨기기</label>
-    <br />
+    <label><input type="checkbox" id="hide-playing"> 게임중인 방 숨기기</label>
+    <br>
     <button onclick="openCreatePopup()">+ 방 만들기</button>
     <h3>방 목록</h3>
     <ul id="room-list"></ul>
   </div>
 
-  <!-- 게임 화면 -->
   <div id="game-screen" style="display:none;">
     <p id="turn">현재 턴: -</p>
-    <p id="players"></p> <!-- 참여자 목록 추가 -->
+    <p id="players"></p>
+    <button id="start-button" style="display:none;">게임 시작</button>
     <canvas id="board" width="760" height="760"></canvas>
   </div>
 
-  <!-- 방 개설 팝업 -->
-  <div id="create-popup" class="popup" style="display:none;">
+  <!-- 방 만들기 팝업 -->
+  <div id="create-popup">
     <div class="popup-content">
-      <h3>방 설정</h3>
-      <label>방 이름:
-        <input type="text" id="room-name" maxlength="20" required />
-      </label><br />
-      <label>비밀번호:
-        <input type="password" id="room-password" maxlength="20" />
-      </label><br />
-      <label>인원 수:
-        <input type="number" id="num-players" min="2" max="8" value="2" />
-      </label><br />
-      <label>판 크기:
-        <input type="number" id="board-size" min="10" max="30" value="19" />
-      </label><br /><br />
-      <button onclick="createRoom()">방 만들기</button>
+      <h3>방 만들기</h3>
+      <input id="room-name" placeholder="방 이름">
+      <br><input id="room-password" placeholder="비밀번호 (선택)">
+      <br>인원수: <input id="num-players" type="number" value="2" min="2" max="6">
+      <br>판 크기: <input id="board-size" type="number" value="19" min="10" max="30">
+      <br><button onclick="createRoom()">만들기</button>
       <button onclick="closeCreatePopup()">취소</button>
     </div>
   </div>
 
   <!-- 비밀번호 입력 팝업 -->
-  <div id="password-popup" class="popup" style="display:none;">
+  <div id="password-popup">
     <div class="popup-content">
       <h3>비밀번호 입력</h3>
-      <input type="password" id="join-password" maxlength="20" />
-      <br /><br />
-      <button onclick="submitPassword()">참여</button>
+      <input id="join-password" placeholder="비밀번호">
+      <br><button onclick="submitPassword()">입장</button>
       <button onclick="closePasswordPopup()">취소</button>
     </div>
   </div>
