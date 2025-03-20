@@ -10,7 +10,7 @@
 
   <!-- 방 리스트 화면 -->
   <div id="room-list-screen">
-    <button onclick="createRoom()">+ 방 만들기</button>
+    <button onclick="openCreatePopup()">+ 방 만들기</button>
     <h3>방 목록</h3>
     <ul id="room-list"></ul>
   </div>
@@ -18,7 +18,24 @@
   <!-- 게임 화면 -->
   <div id="game-screen" style="display:none;">
     <p id="turn">현재 턴: -</p>
-    <canvas id="board" width="600" height="600"></canvas>
+    <canvas id="board" width="760" height="760"></canvas>
+  </div>
+
+  <!-- 방 개설 팝업 -->
+  <div id="create-popup" class="popup" style="display:none;">
+    <div class="popup-content">
+      <h3>방 설정</h3>
+      <label>인원 수:
+        <input type="number" id="num-players" min="2" max="8" value="2" />
+      </label>
+      <br />
+      <label>판 크기:
+        <input type="number" id="board-size" min="10" max="30" value="19" />
+      </label>
+      <br /><br />
+      <button onclick="createRoom()">방 만들기</button>
+      <button onclick="closeCreatePopup()">취소</button>
+    </div>
   </div>
 
   <script src="omok.js"></script>
