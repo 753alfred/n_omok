@@ -5,64 +5,87 @@ const roomListElement = document.getElementById('room-list');
 const turnDisplay = document.getElementById('turn');
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
-const size = 15;
-const cellSize = canvas.width / size;
+const popup = document.getElementById('create-popup');
 
-// 방 관련
+let size = 19;  // 기본 판 크기
+let cellSize;   // 셀 크기 (판 크기에 따라 계산)
+let board = [];
+let lastMoves = {};
+
 let currentRoomId = null;
 let playerId = 0;
 let currentPlayer = 1;
-let board = Array.from({ length: size }, () => Array(size).fill(0));
-let lastMoves = {};  // 마지막 둔 위치 저장
+let maxPlayers = 2;
 
-// 서버 연결 (방 기능 지원 주소로 수정 필요)
+// WebSocket 서버 주소
 const ws = new WebSocket('wss://n-omok-server.onrender.com');
 
-// 서버에서 메시지 수신
+// 서버로부터 메시지 수신
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
   if (data.type === 'roomList') {
-    // 방 목록 표시
     updateRoomList(data.rooms);
   } else if (data.type === 'init') {
-    // 게임 초기화
     playerId = data.playerId;
     board = data.board;
+    size = board.length;
     currentPlayer = data.currentPlayer;
+    maxPlayers = data.maxPlayers;
+
+    setupCanvas();
     switchToGameScreen();
     drawBoard();
     updateTurnText();
   } else if (data.type === 'update') {
-    // 돌 놓기 업데이트
     board[data.y][data.x] = data.playerId;
     lastMoves[data.playerId] = [data.x, data.y];
     currentPlayer = data.currentPlayer;
     drawBoard();
     updateTurnText();
+  } else if (data.type === 'win') {
+    alert(`플레이어 ${data.winner} 승리!`);
   }
 };
 
-// 방 리스트 화면으로 전환
+// 화면 전환 및 방 목록 표시
 function updateRoomList(rooms) {
   roomListElement.innerHTML = '';
-  rooms.forEach(roomId => {
+  rooms.forEach(room => {
     const li = document.createElement('li');
-    li.textContent = `방 ID: ${roomId}`;
+    li.textContent = `방 ID: ${room.roomId} | 인원: ${room.players}/${room.maxPlayers} | 판: ${room.size}x${room.size}`;
     const joinBtn = document.createElement('button');
     joinBtn.textContent = '참여';
-    joinBtn.onclick = () => joinRoom(roomId);
+    joinBtn.onclick = () => joinRoom(room.roomId);
     li.appendChild(joinBtn);
     roomListElement.appendChild(li);
   });
 }
 
-// 방 만들기 요청
-function createRoom() {
-  ws.send(JSON.stringify({ type: 'createRoom' }));
+// 방 생성 팝업
+function openCreatePopup() {
+  popup.style.display = 'flex';
 }
 
-// 방 참여 요청
+function closeCreatePopup() {
+  popup.style.display = 'none';
+}
+
+// 방 만들기
+function createRoom() {
+  const numPlayers = parseInt(document.getElementById('num-players').value);
+  const boardSize = parseInt(document.getElementById('board-size').value);
+
+  ws.send(JSON.stringify({
+    type: 'createRoom',
+    maxPlayers: numPlayers,
+    size: boardSize
+  }));
+
+  closeCreatePopup();
+}
+
+// 방 참여
 function joinRoom(roomId) {
   ws.send(JSON.stringify({ type: 'joinRoom', roomId }));
   currentRoomId = roomId;
@@ -74,7 +97,14 @@ function switchToGameScreen() {
   gameScreen.style.display = 'block';
 }
 
-// 턴 표시 갱신
+// 캔버스 설정
+function setupCanvas() {
+  canvas.width = size * 40;
+  canvas.height = size * 40;
+  cellSize = canvas.width / size;
+}
+
+// 턴 표시
 function updateTurnText() {
   turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
 }
@@ -107,12 +137,9 @@ function drawBoard() {
   }
 }
 
-// 돌 그리기 (색상 + 흰 점 표시)
+// 돌 그리기
 function drawStone(x, y, player, isLastMove) {
-  const colors = [
-    'black', 'red', 'green', 'deepskyblue', 'purple', 'orange', 'brown', 'darkcyan'
-  ];
-
+  const colors = ['black', 'red', 'green', 'deepskyblue', 'purple', 'orange'];
   ctx.beginPath();
   ctx.arc(
     x * cellSize + cellSize / 2,
@@ -138,7 +165,7 @@ function drawStone(x, y, player, isLastMove) {
   }
 }
 
-// 클릭 시 서버에 돌 놓기 요청
+// 클릭 → 돌 놓기 요청
 canvas.addEventListener('click', (e) => {
   if (currentPlayer !== playerId) return;
 
