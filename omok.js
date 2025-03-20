@@ -1,4 +1,4 @@
-// omok.js 전체 파일 - 타입 오류 수정 포함
+// omok.js 전체 파일 - URL로 방 자동 입장 기능 추가
 
 const roomListScreen = document.getElementById('room-list-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -102,7 +102,8 @@ function handleJoin(room) {
     selectedJoinRoomId = room.roomId;
     passwordPopup.style.display = 'flex';
   } else {
-    joinRoom(room.roomId);
+    // URL 이동 방식으로 변경
+    location.href = `./?room=${room.roomId}`;
   }
 }
 
@@ -114,7 +115,7 @@ function submitPassword() {
 }
 function closePasswordPopup() { passwordPopup.style.display = 'none'; }
 
-// 방 참여
+// 방 참여 (자동 입장 처리)
 function joinRoom(roomId) {
   ws.send(JSON.stringify({ type: 'joinRoom', roomId }));
   currentRoomId = roomId;
@@ -196,3 +197,13 @@ canvas.addEventListener('click', (e) => {
 setInterval(() => {
   ws.send(JSON.stringify({ type: 'getRoomList' }));
 }, 5000);
+
+// URL 파라미터로 방 자동 입장 처리
+const urlParams = new URLSearchParams(window.location.search);
+const urlRoomId = urlParams.get('room');
+if (urlRoomId) {
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({ type: 'joinRoom', roomId: urlRoomId }));
+    currentRoomId = urlRoomId;
+  });
+}
