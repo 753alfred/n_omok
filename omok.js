@@ -1,49 +1,89 @@
-// 오목판 크기 및 기본 설정
+// 화면 요소 참조
+const roomListScreen = document.getElementById('room-list-screen');
+const gameScreen = document.getElementById('game-screen');
+const roomListElement = document.getElementById('room-list');
+const turnDisplay = document.getElementById('turn');
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
-const size = 15; // 15x15 오목판
+const size = 15;
 const cellSize = canvas.width / size;
-let board = Array.from({ length: size }, () => Array(size).fill(0)); // 0: 빈칸, 1~n: 플레이어 번호
 
-let playerId = 0;            // 내 플레이어 번호 (서버에서 할당)
-let currentPlayer = 1;       // 현재 턴인 플레이어 번호
-let lastMoves = {};          // { 플레이어 번호: [x, y] } 마지막 위치 저장
+// 방 관련
+let currentRoomId = null;
+let playerId = 0;
+let currentPlayer = 1;
+let board = Array.from({ length: size }, () => Array(size).fill(0));
+let lastMoves = {};  // 마지막 둔 위치 저장
 
-const turnDisplay = document.getElementById('turn');
+// 서버 연결 (방 기능 지원 주소로 수정 필요)
+const ws = new WebSocket('wss://n-omok-server.onrender.com');
 
-// WebSocket 서버 주소 (Render 배포 주소 입력 필요)
-// 예시: wss://omok-server.onrender.com
-const ws = new WebSocket('wss://n-omok-server.onrender.com');  // 실제 주소로 수정
-
-// 서버로부터 메시지를 받았을 때 처리
+// 서버에서 메시지 수신
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
-  if (data.type === 'init') {
-    // 서버에서 내 번호, 오목판 정보, 현재 턴 수신
+  if (data.type === 'roomList') {
+    // 방 목록 표시
+    updateRoomList(data.rooms);
+  } else if (data.type === 'init') {
+    // 게임 초기화
     playerId = data.playerId;
     board = data.board;
     currentPlayer = data.currentPlayer;
-
+    switchToGameScreen();
     drawBoard();
-    turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
+    updateTurnText();
   } else if (data.type === 'update') {
-    // 누군가 돌을 놓았을 때 전체 클라이언트에게 전달됨
+    // 돌 놓기 업데이트
     board[data.y][data.x] = data.playerId;
-    lastMoves[data.playerId] = [data.x, data.y];  // 마지막 위치 기록
+    lastMoves[data.playerId] = [data.x, data.y];
     currentPlayer = data.currentPlayer;
-
     drawBoard();
-    turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
+    updateTurnText();
   }
 };
 
-// 오목판 그리기 함수
+// 방 리스트 화면으로 전환
+function updateRoomList(rooms) {
+  roomListElement.innerHTML = '';
+  rooms.forEach(roomId => {
+    const li = document.createElement('li');
+    li.textContent = `방 ID: ${roomId}`;
+    const joinBtn = document.createElement('button');
+    joinBtn.textContent = '참여';
+    joinBtn.onclick = () => joinRoom(roomId);
+    li.appendChild(joinBtn);
+    roomListElement.appendChild(li);
+  });
+}
+
+// 방 만들기 요청
+function createRoom() {
+  ws.send(JSON.stringify({ type: 'createRoom' }));
+}
+
+// 방 참여 요청
+function joinRoom(roomId) {
+  ws.send(JSON.stringify({ type: 'joinRoom', roomId }));
+  currentRoomId = roomId;
+}
+
+// 게임 화면으로 전환
+function switchToGameScreen() {
+  roomListScreen.style.display = 'none';
+  gameScreen.style.display = 'block';
+}
+
+// 턴 표시 갱신
+function updateTurnText() {
+  turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
+}
+
+// 오목판 그리기
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = '#000';
 
-  // 바둑판 선 그리기
   for (let i = 0; i < size; i++) {
     ctx.beginPath();
     ctx.moveTo(cellSize / 2, i * cellSize + cellSize / 2);
@@ -56,7 +96,6 @@ function drawBoard() {
     ctx.stroke();
   }
 
-  // 모든 돌 그리기
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (board[y][x] !== 0) {
@@ -68,19 +107,10 @@ function drawBoard() {
   }
 }
 
-// 돌 그리기 함수
+// 돌 그리기 (색상 + 흰 점 표시)
 function drawStone(x, y, player, isLastMove) {
-  // 눈에 잘 띄는 색 순서 배열
   const colors = [
-    'black',             // 플레이어 1
-    'red',               // 플레이어 2
-    'green',             // 플레이어 3
-    'deepskyblue',       // 플레이어 4
-    'purple',            // 플레이어 5
-    'orange',            // 플레이어 6
-    'brown',             // 플레이어 7
-    'darkcyan'           // 플레이어 8
-    // 추가 가능
+    'black', 'red', 'green', 'deepskyblue', 'purple', 'orange', 'brown', 'darkcyan'
   ];
 
   ctx.beginPath();
@@ -91,16 +121,15 @@ function drawStone(x, y, player, isLastMove) {
     0,
     Math.PI * 2
   );
-  ctx.fillStyle = colors[(player - 1) % colors.length]; // 색 순환 사용
+  ctx.fillStyle = colors[(player - 1) % colors.length];
   ctx.fill();
 
-  // 마지막 둔 돌이면 흰 점 표시
   if (isLastMove) {
     ctx.beginPath();
     ctx.arc(
       x * cellSize + cellSize / 2,
       y * cellSize + cellSize / 2,
-      5, // 흰 점 크기
+      5,
       0,
       Math.PI * 2
     );
@@ -111,19 +140,19 @@ function drawStone(x, y, player, isLastMove) {
 
 // 클릭 시 서버에 돌 놓기 요청
 canvas.addEventListener('click', (e) => {
-  if (currentPlayer !== playerId) return; // 내 턴 아니면 무시
+  if (currentPlayer !== playerId) return;
 
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / cellSize);
   const y = Math.floor((e.clientY - rect.top) / cellSize);
 
-  if (board[y][x] !== 0) return; // 이미 놓은 곳 무시
+  if (board[y][x] !== 0) return;
 
-  // 서버에 돌 놓기 요청 보내기
   ws.send(JSON.stringify({
     type: 'place',
     x,
     y,
-    playerId
+    playerId,
+    roomId: currentRoomId
   }));
 });
