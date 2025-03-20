@@ -1,4 +1,4 @@
-// omok.js 전체 파일 - 서버 최신 버전 대응
+// omok.js 전체 파일 - 타입 오류 수정 포함
 
 const roomListScreen = document.getElementById('room-list-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -34,10 +34,10 @@ ws.onmessage = (event) => {
     roomListData = data.rooms.sort((a, b) => b.createdAt - a.createdAt);
     renderRoomList();
   } else if (data.type === 'init') {
-    playerId = data.playerId;
+    playerId = Number(data.playerId);
     board = data.board;
     size = board.length;
-    currentPlayer = data.currentPlayer;
+    currentPlayer = Number(data.currentPlayer);
     maxPlayers = data.maxPlayers;
     playersInRoom = data.players;
 
@@ -48,7 +48,7 @@ ws.onmessage = (event) => {
   } else if (data.type === 'update') {
     board[data.y][data.x] = data.playerId;
     lastMoves[data.playerId] = [data.x, data.y];
-    currentPlayer = data.currentPlayer;
+    currentPlayer = Number(data.currentPlayer);
     drawBoard();
     updateTurnText();
   } else if (data.type === 'win') {
@@ -179,7 +179,9 @@ function drawStone(x, y, player, isLastMove) {
 
 // 클릭 처리
 canvas.addEventListener('click', (e) => {
-  if (currentPlayer !== playerId) return;
+  console.log(`내 번호: ${playerId} (${typeof playerId}), 현재 턴: ${currentPlayer} (${typeof currentPlayer})`);
+  if (Number(currentPlayer) !== Number(playerId)) return;
+
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / cellSize);
   const y = Math.floor((e.clientY - rect.top) / cellSize);
