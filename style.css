@@ -4,11 +4,13 @@ body {
   background: #f9f9f9;
 }
 
+/* 모바일 환경에서 오목판을 화면 크기에 맞게 조정 */
 #board {
-  border: 2px solid black;
-  margin-top: 20px;
-  background: #fff;
+  max-width: 100%;    /* 부모 요소(화면)의 최대 가로 길이를 넘지 않음 */
+  height: auto;       /* 높이를 자동으로 비율에 맞춰 조정 */
+  box-sizing: border-box;
 }
+
 
 #room-list-screen,
 #game-screen {
