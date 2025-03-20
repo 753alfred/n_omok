@@ -13,7 +13,7 @@ const turnDisplay = document.getElementById('turn');
 
 // WebSocket 서버 주소 (Render 배포 주소 입력 필요)
 // 예시: wss://omok-server.onrender.com
-const ws = new WebSocket('wss://YOUR_RENDER_SERVER_URL');  // 실제 주소로 수정
+const ws = new WebSocket('wss://n-omok-server.onrender.com');  // 실제 주소로 수정
 
 // 서버로부터 메시지를 받았을 때 처리
 ws.onmessage = (event) => {
