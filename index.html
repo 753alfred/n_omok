@@ -2,16 +2,25 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>n인용 오목 게임</title>
-  <style>
-    canvas { border: 1px solid #000; }
-    #turn { margin-top: 10px; font-size: 18px; }
-  </style>
+  <title>n인용 오목 게임 (방 개설)</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>n인용 오목 게임</h1>
-  <canvas id="board" width="600" height="600"></canvas>
-  <div id="turn">현재 턴: 플레이어 1</div>
+
+  <!-- 방 리스트 화면 -->
+  <div id="room-list-screen">
+    <button onclick="createRoom()">+ 방 만들기</button>
+    <h3>방 목록</h3>
+    <ul id="room-list"></ul>
+  </div>
+
+  <!-- 게임 화면 -->
+  <div id="game-screen" style="display:none;">
+    <p id="turn">현재 턴: -</p>
+    <canvas id="board" width="600" height="600"></canvas>
+  </div>
+
   <script src="omok.js"></script>
 </body>
 </html>
