@@ -4,14 +4,6 @@ body {
   background: #f9f9f9;
 }
 
-/* 모바일 환경에서 오목판을 화면 크기에 맞게 조정 */
-#board {
-  max-width: 100%;    /* 부모 요소(화면)의 최대 가로 길이를 넘지 않음 */
-  height: auto;       /* 높이를 자동으로 비율에 맞춰 조정 */
-  box-sizing: border-box;
-}
-
-
 #room-list-screen,
 #game-screen {
   margin-top: 20px;
@@ -43,4 +35,22 @@ button {
   background: white;
   padding: 20px;
   border-radius: 10px;
+}
+
+/* 추가된 부분: 게임판을 감싸는 컨테이너 스타일 */
+.board-container {
+  width: 100%;
+  overflow: auto; /* 내용이 넘치면 스크롤을 표시 */
+  display: flex;
+  justify-content: center; /* 게임판 가운데 정렬 */
+}
+
+/* 수정된 게임판 스타일 */
+#board {
+  max-width: 100%; /* 화면 너비보다 크지 않게 설정 */
+  height: auto;    /* 비율 유지 */
+  border: 2px solid black;
+  margin-top: 20px;
+  background: #fff;
+  box-sizing: border-box;
 }
