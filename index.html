@@ -29,7 +29,7 @@
     <button id="start-button" style="display:none;">게임 시작</button>
   </div>
 
-  <!-- 방 만들기 팝업 -->
+  <!-- 방 참여 시 관전 옵션 추가 -->
   <div id="create-popup">
     <div class="popup-content">
       <h3>방 만들기</h3>
@@ -41,12 +41,14 @@
       <button onclick="closeCreatePopup()">취소</button>
     </div>
   </div>
-
-  <!-- 비밀번호 입력 팝업 -->
+  
+  <!-- 참여 팝업 수정 -->
   <div id="password-popup">
     <div class="popup-content">
-      <h3>비밀번호 입력</h3>
-      <input id="join-password" placeholder="비밀번호">
+      <h3>방 입장</h3>
+      <input id="join-password" placeholder="비밀번호 (있을 시 입력)">
+      <br>
+      <label><input type="checkbox" id="is-spectator"> 관전자로 참여하기</label>
       <br><button onclick="submitPassword()">입장</button>
       <button onclick="closePasswordPopup()">취소</button>
     </div>
