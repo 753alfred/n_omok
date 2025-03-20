@@ -10,6 +10,8 @@
 
   <!-- 방 리스트 화면 -->
   <div id="room-list-screen">
+    <label><input type="checkbox" id="hide-playing" onchange="renderRoomList()"> 게임중인 방 숨기기</label>
+    <br />
     <button onclick="openCreatePopup()">+ 방 만들기</button>
     <h3>방 목록</h3>
     <ul id="room-list"></ul>
@@ -25,16 +27,31 @@
   <div id="create-popup" class="popup" style="display:none;">
     <div class="popup-content">
       <h3>방 설정</h3>
+      <label>방 이름:
+        <input type="text" id="room-name" maxlength="20" required />
+      </label><br />
+      <label>비밀번호:
+        <input type="password" id="room-password" maxlength="20" />
+      </label><br />
       <label>인원 수:
         <input type="number" id="num-players" min="2" max="8" value="2" />
-      </label>
-      <br />
+      </label><br />
       <label>판 크기:
         <input type="number" id="board-size" min="10" max="30" value="19" />
-      </label>
-      <br /><br />
+      </label><br /><br />
       <button onclick="createRoom()">방 만들기</button>
       <button onclick="closeCreatePopup()">취소</button>
+    </div>
+  </div>
+
+  <!-- 비밀번호 입력 팝업 -->
+  <div id="password-popup" class="popup" style="display:none;">
+    <div class="popup-content">
+      <h3>비밀번호 입력</h3>
+      <input type="password" id="join-password" maxlength="20" />
+      <br /><br />
+      <button onclick="submitPassword()">참여</button>
+      <button onclick="closePasswordPopup()">취소</button>
     </div>
   </div>
 
