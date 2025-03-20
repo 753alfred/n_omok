@@ -1,8 +1,11 @@
+// omok.js 전체 파일 - 서버 최신 버전 대응
+
 const roomListScreen = document.getElementById('room-list-screen');
 const gameScreen = document.getElementById('game-screen');
 const roomListElement = document.getElementById('room-list');
 const hidePlayingCheckbox = document.getElementById('hide-playing');
 const turnDisplay = document.getElementById('turn');
+const playersDiv = document.getElementById('players');
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const popup = document.getElementById('create-popup');
@@ -12,18 +15,18 @@ let size = 19;
 let cellSize;
 let board = [];
 let lastMoves = {};
-let playersInRoom = [];  // 방 참여자 목록 (서버에서 전달 필요)
 
 let currentRoomId = null;
 let playerId = 0;
 let currentPlayer = 1;
 let maxPlayers = 2;
+let playersInRoom = [];
 let roomListData = [];
 let selectedJoinRoomId = '';
-let selectedJoinPassword = '';
 
 const ws = new WebSocket('wss://n-omok-server.onrender.com');
 
+// 서버 메시지 수신
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
@@ -36,6 +39,8 @@ ws.onmessage = (event) => {
     size = board.length;
     currentPlayer = data.currentPlayer;
     maxPlayers = data.maxPlayers;
+    playersInRoom = data.players;
+
     setupCanvas();
     switchToGameScreen();
     drawBoard();
@@ -47,7 +52,7 @@ ws.onmessage = (event) => {
     drawBoard();
     updateTurnText();
   } else if (data.type === 'win') {
-    alert(`플레이어 ${data.winner} 승리!`);
+    alert(`\uC2B9\uB9AC! \uD50C\uB808\uC774\uC5B4 ${data.winner}`);
   } else if (data.type === 'invalidPassword') {
     alert('비밀번호가 틀렸습니다.');
   }
@@ -59,7 +64,6 @@ function renderRoomList() {
   roomListElement.innerHTML = '';
   roomListData.forEach(room => {
     if (hidePlaying && room.status === '게임중') return;
-
     const li = document.createElement('li');
     li.textContent = `[${room.roomId}] ${room.name} | ${room.players}/${room.maxPlayers} | ${room.status}`;
     const joinBtn = document.createElement('button');
@@ -84,8 +88,7 @@ function createRoom() {
 
   ws.send(JSON.stringify({
     type: 'createRoom',
-    name,
-    password,
+    name, password,
     maxPlayers: numPlayers,
     size: boardSize
   }));
@@ -103,7 +106,7 @@ function handleJoin(room) {
   }
 }
 
-// 비밀번호 확인 후 참여
+// 비밀번호 입력 후 참여
 function submitPassword() {
   const pw = document.getElementById('join-password').value.trim();
   ws.send(JSON.stringify({ type: 'joinRoom', roomId: selectedJoinRoomId, password: pw }));
@@ -117,7 +120,7 @@ function joinRoom(roomId) {
   currentRoomId = roomId;
 }
 
-// 게임화면 전환 및 설정
+// 게임 화면 전환 및 설정
 function switchToGameScreen() {
   roomListScreen.style.display = 'none';
   gameScreen.style.display = 'block';
@@ -129,6 +132,7 @@ function setupCanvas() {
 }
 function updateTurnText() {
   turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
+  playersDiv.textContent = `참여자: ${playersInRoom.join(', ')} | 현재 턴: 플레이어 ${currentPlayer}`;
 }
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -173,7 +177,7 @@ function drawStone(x, y, player, isLastMove) {
   }
 }
 
-// 돌 놓기
+// 클릭 처리
 canvas.addEventListener('click', (e) => {
   if (currentPlayer !== playerId) return;
   const rect = canvas.getBoundingClientRect();
@@ -186,7 +190,7 @@ canvas.addEventListener('click', (e) => {
   }));
 });
 
-// 5초마다 서버에 방 리스트 요청
+// 방 리스트 주기적 요청
 setInterval(() => {
   ws.send(JSON.stringify({ type: 'getRoomList' }));
 }, 5000);
