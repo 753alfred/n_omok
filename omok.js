@@ -1,4 +1,4 @@
-// omok.js 전체 파일 - URL로 방 자동 입장 기능 + 게임 시작 버튼 추가
+// omok.js 전체 파일 - 게임 시작 버튼 HTML 참조로 수정 완료
 
 const roomListScreen = document.getElementById('room-list-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -10,16 +10,7 @@ const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const popup = document.getElementById('create-popup');
 const passwordPopup = document.getElementById('password-popup');
-
-// 게임 시작 버튼 생성
-const startButton = document.createElement('button');
-startButton.textContent = '게임 시작';
-startButton.style.display = 'none';
-startButton.onclick = () => {
-  ws.send(JSON.stringify({ type: 'startGame', roomId: currentRoomId }));
-  startButton.style.display = 'none';
-};
-gameScreen.appendChild(startButton);
+const startButton = document.getElementById('start-button');
 
 let size = 19;
 let cellSize;
@@ -58,7 +49,6 @@ ws.onmessage = (event) => {
     drawBoard();
     updateTurnText();
 
-    // 게임 시작 여부에 따라 버튼 표시
     if (!isGameStarted && playersInRoom.length === maxPlayers && playerId === 1) {
       startButton.style.display = 'inline';
     } else {
@@ -80,7 +70,11 @@ ws.onmessage = (event) => {
   }
 };
 
-// 방 리스트 표시
+startButton.onclick = () => {
+  ws.send(JSON.stringify({ type: 'startGame', roomId: currentRoomId }));
+  startButton.style.display = 'none';
+};
+
 function renderRoomList() {
   const hidePlaying = hidePlayingCheckbox.checked;
   roomListElement.innerHTML = '';
