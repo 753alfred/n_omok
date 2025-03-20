@@ -1,4 +1,4 @@
-// omok.js 전체 파일 - URL로 방 자동 입장 기능 추가
+// omok.js 전체 파일 - URL로 방 자동 입장 기능 + 게임 시작 버튼 추가
 
 const roomListScreen = document.getElementById('room-list-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -10,6 +10,16 @@ const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const popup = document.getElementById('create-popup');
 const passwordPopup = document.getElementById('password-popup');
+
+// 게임 시작 버튼 생성
+const startButton = document.createElement('button');
+startButton.textContent = '게임 시작';
+startButton.style.display = 'none';
+startButton.onclick = () => {
+  ws.send(JSON.stringify({ type: 'startGame', roomId: currentRoomId }));
+  startButton.style.display = 'none';
+};
+gameScreen.appendChild(startButton);
 
 let size = 19;
 let cellSize;
@@ -23,6 +33,7 @@ let maxPlayers = 2;
 let playersInRoom = [];
 let roomListData = [];
 let selectedJoinRoomId = '';
+let isGameStarted = false;
 
 const ws = new WebSocket('wss://n-omok-server.onrender.com');
 
@@ -40,11 +51,19 @@ ws.onmessage = (event) => {
     currentPlayer = Number(data.currentPlayer);
     maxPlayers = data.maxPlayers;
     playersInRoom = data.players;
+    isGameStarted = data.isGameStarted;
 
     setupCanvas();
     switchToGameScreen();
     drawBoard();
     updateTurnText();
+
+    // 게임 시작 여부에 따라 버튼 표시
+    if (!isGameStarted && playersInRoom.length === maxPlayers && playerId === 1) {
+      startButton.style.display = 'inline';
+    } else {
+      startButton.style.display = 'none';
+    }
   } else if (data.type === 'update') {
     board[data.y][data.x] = data.playerId;
     lastMoves[data.playerId] = [data.x, data.y];
@@ -52,9 +71,12 @@ ws.onmessage = (event) => {
     drawBoard();
     updateTurnText();
   } else if (data.type === 'win') {
-    alert(`\uC2B9\uB9AC! \uD50C\uB808\uC774\uC5B4 ${data.winner}`);
+    alert(`승리! 플레이어 ${data.winner}`);
   } else if (data.type === 'invalidPassword') {
     alert('비밀번호가 틀렸습니다.');
+  } else if (data.type === 'gameStarted') {
+    isGameStarted = true;
+    startButton.style.display = 'none';
   }
 };
 
@@ -74,11 +96,9 @@ function renderRoomList() {
   });
 }
 
-// 방 만들기 팝업
 function openCreatePopup() { popup.style.display = 'flex'; }
 function closeCreatePopup() { popup.style.display = 'none'; }
 
-// 방 만들기 요청
 function createRoom() {
   const name = document.getElementById('room-name').value.trim();
   const password = document.getElementById('room-password').value.trim();
@@ -96,18 +116,15 @@ function createRoom() {
   closeCreatePopup();
 }
 
-// 방 참여 처리
 function handleJoin(room) {
   if (room.password) {
     selectedJoinRoomId = room.roomId;
     passwordPopup.style.display = 'flex';
   } else {
-    // URL 이동 방식으로 변경
     location.href = `./?room=${room.roomId}`;
   }
 }
 
-// 비밀번호 입력 후 참여
 function submitPassword() {
   const pw = document.getElementById('join-password').value.trim();
   ws.send(JSON.stringify({ type: 'joinRoom', roomId: selectedJoinRoomId, password: pw }));
@@ -115,13 +132,11 @@ function submitPassword() {
 }
 function closePasswordPopup() { passwordPopup.style.display = 'none'; }
 
-// 방 참여 (자동 입장 처리)
 function joinRoom(roomId) {
   ws.send(JSON.stringify({ type: 'joinRoom', roomId }));
   currentRoomId = roomId;
 }
 
-// 게임 화면 전환 및 설정
 function switchToGameScreen() {
   roomListScreen.style.display = 'none';
   gameScreen.style.display = 'block';
@@ -178,9 +193,8 @@ function drawStone(x, y, player, isLastMove) {
   }
 }
 
-// 클릭 처리
 canvas.addEventListener('click', (e) => {
-  console.log(`내 번호: ${playerId} (${typeof playerId}), 현재 턴: ${currentPlayer} (${typeof currentPlayer})`);
+  if (!isGameStarted) return;
   if (Number(currentPlayer) !== Number(playerId)) return;
 
   const rect = canvas.getBoundingClientRect();
@@ -193,12 +207,10 @@ canvas.addEventListener('click', (e) => {
   }));
 });
 
-// 방 리스트 주기적 요청
 setInterval(() => {
   ws.send(JSON.stringify({ type: 'getRoomList' }));
 }, 5000);
 
-// URL 파라미터로 방 자동 입장 처리
 const urlParams = new URLSearchParams(window.location.search);
 const urlRoomId = urlParams.get('room');
 if (urlRoomId) {
