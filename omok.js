@@ -1,45 +1,88 @@
 // 오목판 크기 및 기본 설정
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
-const size = 15;  // 15x15 오목판
+const size = 15; // 15x15 오목판
 const cellSize = canvas.width / size;
-const board = Array.from({ length: size }, () => Array(size).fill(0)); // 0: 빈칸, 1~n: 플레이어 번호
+let board = Array.from({ length: size }, () => Array(size).fill(0)); // 0: 빈칸, 1~n: 플레이어 번호
 
-const numPlayers = 3; // 플레이어 수 (n명)
-let currentPlayer = 1; // 현재 플레이어 (1번부터 시작)
+let playerId = 0;            // 내 플레이어 번호 (서버에서 할당)
+let currentPlayer = 1;       // 현재 턴인 플레이어 번호
+let lastMoves = {};          // { 플레이어 번호: [x, y] } 마지막 위치 저장
 
 const turnDisplay = document.getElementById('turn');
+
+// WebSocket 서버 주소 (Render 배포 주소 입력 필요)
+// 예시: wss://omok-server.onrender.com
+const ws = new WebSocket('wss://YOUR_RENDER_SERVER_URL');  // 실제 주소로 수정
+
+// 서버로부터 메시지를 받았을 때 처리
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+
+  if (data.type === 'init') {
+    // 서버에서 내 번호, 오목판 정보, 현재 턴 수신
+    playerId = data.playerId;
+    board = data.board;
+    currentPlayer = data.currentPlayer;
+
+    drawBoard();
+    turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
+  } else if (data.type === 'update') {
+    // 누군가 돌을 놓았을 때 전체 클라이언트에게 전달됨
+    board[data.y][data.x] = data.playerId;
+    lastMoves[data.playerId] = [data.x, data.y];  // 마지막 위치 기록
+    currentPlayer = data.currentPlayer;
+
+    drawBoard();
+    turnDisplay.textContent = `내 번호: ${playerId} / 현재 턴: ${currentPlayer}`;
+  }
+};
 
 // 오목판 그리기 함수
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = '#000';
+
+  // 바둑판 선 그리기
   for (let i = 0; i < size; i++) {
-    // 가로 선
     ctx.beginPath();
     ctx.moveTo(cellSize / 2, i * cellSize + cellSize / 2);
     ctx.lineTo(canvas.width - cellSize / 2, i * cellSize + cellSize / 2);
     ctx.stroke();
-    // 세로 선
+
     ctx.beginPath();
     ctx.moveTo(i * cellSize + cellSize / 2, cellSize / 2);
     ctx.lineTo(i * cellSize + cellSize / 2, canvas.height - cellSize / 2);
     ctx.stroke();
   }
 
-  // 돌 그리기
+  // 모든 돌 그리기
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (board[y][x] !== 0) {
-        drawStone(x, y, board[y][x]);
+        const player = board[y][x];
+        const isLastMove = lastMoves[player]?.[0] === x && lastMoves[player]?.[1] === y;
+        drawStone(x, y, player, isLastMove);
       }
     }
   }
 }
 
 // 돌 그리기 함수
-function drawStone(x, y, player) {
-  const colors = ['black', 'white', 'red', 'blue', 'green', 'purple'];
+function drawStone(x, y, player, isLastMove) {
+  // 눈에 잘 띄는 색 순서 배열
+  const colors = [
+    'black',             // 플레이어 1
+    'red',               // 플레이어 2
+    'green',             // 플레이어 3
+    'deepskyblue',       // 플레이어 4
+    'purple',            // 플레이어 5
+    'orange',            // 플레이어 6
+    'brown',             // 플레이어 7
+    'darkcyan'           // 플레이어 8
+    // 추가 가능
+  ];
+
   ctx.beginPath();
   ctx.arc(
     x * cellSize + cellSize / 2,
@@ -48,68 +91,39 @@ function drawStone(x, y, player) {
     0,
     Math.PI * 2
   );
-  ctx.fillStyle = colors[(player - 1) % colors.length];
+  ctx.fillStyle = colors[(player - 1) % colors.length]; // 색 순환 사용
   ctx.fill();
+
+  // 마지막 둔 돌이면 흰 점 표시
+  if (isLastMove) {
+    ctx.beginPath();
+    ctx.arc(
+      x * cellSize + cellSize / 2,
+      y * cellSize + cellSize / 2,
+      5, // 흰 점 크기
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = 'white';
+    ctx.fill();
+  }
 }
 
-// 클릭 시 돌 놓기
+// 클릭 시 서버에 돌 놓기 요청
 canvas.addEventListener('click', (e) => {
+  if (currentPlayer !== playerId) return; // 내 턴 아니면 무시
+
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / cellSize);
   const y = Math.floor((e.clientY - rect.top) / cellSize);
 
-  // 이미 돌이 놓여있으면 무시
-  if (board[y][x] !== 0) return;
+  if (board[y][x] !== 0) return; // 이미 놓은 곳 무시
 
-  // 현재 플레이어의 돌 놓기
-  board[y][x] = currentPlayer;
-  drawBoard();
-
-  // 승리 체크
-  if (checkWin(x, y, currentPlayer)) {
-    alert(`플레이어 ${currentPlayer} 승리!`);
-    canvas.removeEventListener('click', arguments.callee); // 게임 종료
-    return;
-  }
-
-  // 다음 플레이어로 전환
-  currentPlayer = (currentPlayer % numPlayers) + 1;
-  turnDisplay.textContent = `현재 턴: 플레이어 ${currentPlayer}`;
+  // 서버에 돌 놓기 요청 보내기
+  ws.send(JSON.stringify({
+    type: 'place',
+    x,
+    y,
+    playerId
+  }));
 });
-
-// 승리 조건 체크 함수 (연속 5개 돌 확인)
-function checkWin(x, y, player) {
-  const directions = [
-    [1, 0], // 가로
-    [0, 1], // 세로
-    [1, 1], // 대각 ↘
-    [1, -1] // 대각 ↗
-  ];
-
-  for (let [dx, dy] of directions) {
-    let count = 1;
-
-    // 현재 돌 기준으로 양쪽 방향 탐색
-    for (let dir = -1; dir <= 1; dir += 2) {
-      let nx = x + dx * dir;
-      let ny = y + dy * dir;
-
-      while (
-        nx >= 0 && nx < size &&
-        ny >= 0 && ny < size &&
-        board[ny][nx] === player
-      ) {
-        count++;
-        nx += dx * dir;
-        ny += dy * dir;
-      }
-    }
-
-    // 5개 이상 연결되면 승리
-    if (count >= 5) return true;
-  }
-
-  return false;
-}
-
-drawBoard(); // 초기 오목판 그리기
