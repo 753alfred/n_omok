@@ -7,6 +7,7 @@ body {
 canvas {
   border: 2px solid #000;
   margin-top: 10px;
+  background-color: #fff;
 }
 
 #room-list {
@@ -21,4 +22,20 @@ canvas {
 button {
   padding: 10px 20px;
   font-size: 16px;
+}
+
+/* 팝업 스타일 */
+.popup {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
 }
