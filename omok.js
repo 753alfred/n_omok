@@ -12,6 +12,7 @@ let size = 19;
 let cellSize;
 let board = [];
 let lastMoves = {};
+let playersInRoom = [];  // 방 참여자 목록 (서버에서 전달 필요)
 
 let currentRoomId = null;
 let playerId = 0;
