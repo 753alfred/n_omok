@@ -1,0 +1,24 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background-color: #f8f8f8;
+}
+
+canvas {
+  border: 2px solid #000;
+  margin-top: 10px;
+}
+
+#room-list {
+  list-style: none;
+  padding: 0;
+}
+
+#room-list li {
+  margin: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+}
