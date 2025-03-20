@@ -184,3 +184,8 @@ canvas.addEventListener('click', (e) => {
     type: 'place', x, y, playerId, roomId: currentRoomId
   }));
 });
+
+// 5초마다 서버에 방 리스트 요청
+setInterval(() => {
+  ws.send(JSON.stringify({ type: 'getRoomList' }));
+}, 5000);
